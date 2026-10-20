@@ -40,9 +40,17 @@ export async function saveAttachment(
       if (result.resultCode === IntentLauncher.ResultCode.Canceled) return null;
       if (
         result.resultCode !== IntentLauncher.ResultCode.Success ||
-        !result.data?.startsWith("content://")
+        typeof result.data !== "string" ||
+        !result.data.startsWith("content://")
       ) {
-        throw new Error("Android не повернув адресу файла для збереження");
+        const details = JSON.stringify({
+          resultCode: result.resultCode,
+          dataType: typeof result.data,
+          data: result.data ?? null,
+        });
+        throw new Error(
+          `Android не повернув адресу файла для збереження. Результат діалогу: ${details}`,
+        );
       }
       return result.data;
     },

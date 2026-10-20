@@ -84,3 +84,28 @@ test("shares images with their MIME type", async () => {
     mimeType: "image/png",
   });
 });
+
+test.each([
+  { resultCode: -1 },
+  {
+    resultCode: -1,
+    data: "Intent { dat=content://provider/document/123 flg=0x43 }",
+  },
+  { resultCode: 1, data: "content://provider/document/123" },
+])(
+  "includes the actual rejected Android result for diagnosis: %j",
+  async (result) => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    mockPick.mockResolvedValueOnce(result);
+    await expect(
+      saveAttachment("file:///a.pdf", "a.pdf", "application/pdf"),
+    ).rejects.toThrow(
+      JSON.stringify({
+        resultCode: result.resultCode,
+        dataType: typeof result.data,
+        data: result.data ?? null,
+      }),
+    );
+    expect(mockWrite).not.toHaveBeenCalled();
+  },
+);
