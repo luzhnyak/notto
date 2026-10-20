@@ -18,7 +18,8 @@ export class NativeBackupPort implements BackupPort {
   async hash(bytes: Uint8Array) {
     const digest = await Crypto.digest(
       Crypto.CryptoDigestAlgorithm.SHA256,
-      new Uint8Array(bytes).buffer,
+      // Native Expo Crypto expects a TypedArray; ArrayBuffer is web-only here.
+      new Uint8Array(bytes),
     );
     return Array.from(new Uint8Array(digest), (v) =>
       v.toString(16).padStart(2, "0"),
