@@ -60,33 +60,6 @@ export default function Settings() {
             router.push({ pathname: "/catalog", params: { kind: "emotions" } })
           }
         />
-        <Button
-          title="Вибране"
-          onPress={() =>
-            router.push({
-              pathname: "/collection",
-              params: { status: "favorite" },
-            })
-          }
-        />
-        <Button
-          title="Архів"
-          onPress={() =>
-            router.push({
-              pathname: "/collection",
-              params: { status: "archived" },
-            })
-          }
-        />
-        <Button
-          title="Кошик"
-          onPress={() =>
-            router.push({
-              pathname: "/collection",
-              params: { status: "deleted" },
-            })
-          }
-        />
       </Card>
       <BackupPanel />
       <Card>
