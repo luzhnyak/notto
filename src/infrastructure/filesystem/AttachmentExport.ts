@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
-import * as FileSystem from "expo-file-system/legacy";
+import { File } from "expo-file-system";
+import * as IntentLauncher from "expo-intent-launcher";
 import * as Sharing from "expo-sharing";
 import { message } from "../../utils/values";
 
@@ -18,32 +19,40 @@ export async function saveAttachment(
     await shareAttachment(uri, mimeType);
     return false; // The system sheet handles saving or cancellation.
   }
-  const permission = await saveStep("SAVE_PICK_DIRECTORY", "Вибір папки", () =>
-    FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(),
-  );
-  if (!permission.granted) return false;
+  // Read before showing the picker so a missing source cannot leave an empty file.
   const bytes = await saveStep("SAVE_READ_SOURCE", "Читання вкладення", () =>
-    FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    }),
+    new File(uri).bytes(),
   );
   const filename =
     name.replace(/[\\/\u0000-\u001f]/g, "_").trim() || "attachment";
   const destination = await saveStep(
     "SAVE_CREATE_FILE",
-    "Створення файла",
-    () =>
-      FileSystem.StorageAccessFramework.createFileAsync(
-        permission.directoryUri,
-        filename,
-        mimeType,
-      ),
+    "Вибір файла для збереження",
+    async () => {
+      const result = await IntentLauncher.startActivityAsync(
+        "android.intent.action.CREATE_DOCUMENT",
+        {
+          category: "android.intent.category.OPENABLE",
+          type: mimeType || "application/octet-stream",
+          extra: { "android.intent.extra.TITLE": filename },
+        },
+      );
+      if (result.resultCode === IntentLauncher.ResultCode.Canceled) return null;
+      if (
+        result.resultCode !== IntentLauncher.ResultCode.Success ||
+        !result.data?.startsWith("content://")
+      ) {
+        throw new Error("Android не повернув адресу файла для збереження");
+      }
+      return result.data;
+    },
   );
-  await saveStep("SAVE_WRITE_FILE", "Запис файла", () =>
-    FileSystem.writeAsStringAsync(destination, bytes, {
-      encoding: FileSystem.EncodingType.Base64,
-    }),
-  );
+  if (!destination) return false;
+  // CREATE_DOCUMENT grants access to this single document. The modern API opens
+  // its content URI directly, without the legacy SAF tree/canWrite checks.
+  await saveStep("SAVE_WRITE_FILE", "Запис файла", async () => {
+    new File(destination).write(bytes);
+  });
   return true;
 }
 

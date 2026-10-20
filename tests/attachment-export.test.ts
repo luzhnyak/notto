@@ -1,20 +1,27 @@
-const mockRead = jest.fn(async () => "AP8=");
-const mockWrite = jest.fn(async () => {});
-const mockPermission = jest.fn(async () => ({
-  granted: true,
-  directoryUri: "content://folder",
-}));
-const mockCreate = jest.fn(async () => "content://folder/photo.png");
+const mockBytes = jest.fn(async () => new Uint8Array([0, 255]));
+const mockWrite = jest.fn();
+const mockPick = jest.fn(
+  async (): Promise<{ resultCode: number; data?: string }> => ({
+    resultCode: -1,
+    data: "content://com.android.providers.downloads.documents/document/123",
+  }),
+);
 const mockShare = jest.fn(async () => {});
 jest.mock("react-native", () => ({ Platform: { OS: "android" } }));
-jest.mock("expo-file-system/legacy", () => ({
-  EncodingType: { Base64: "base64" },
-  readAsStringAsync: (...args: unknown[]) => mockRead(...(args as [])),
-  writeAsStringAsync: (...args: unknown[]) => mockWrite(...(args as [])),
-  StorageAccessFramework: {
-    requestDirectoryPermissionsAsync: () => mockPermission(),
-    createFileAsync: (...args: unknown[]) => mockCreate(...(args as [])),
+jest.mock("expo-file-system", () => ({
+  File: class {
+    constructor(public uri: string) {}
+    bytes() {
+      return mockBytes();
+    }
+    write(bytes: Uint8Array) {
+      mockWrite(this.uri, bytes);
+    }
   },
+}));
+jest.mock("expo-intent-launcher", () => ({
+  ResultCode: { Success: -1, Canceled: 0 },
+  startActivityAsync: (...args: unknown[]) => mockPick(...(args as [])),
 }));
 jest.mock("expo-sharing", () => ({
   isAvailableAsync: async () => true,
@@ -25,56 +32,55 @@ import {
   shareAttachment,
 } from "../src/infrastructure/filesystem/AttachmentExport";
 beforeEach(() => jest.clearAllMocks());
-test("saves binary image to selected Android folder", async () => {
+afterEach(() => jest.restoreAllMocks());
+test("saves original binary bytes to the individual Downloads document selected with Save As", async () => {
   expect(
     await saveAttachment("file:///photo.png", "photo.png", "image/png"),
   ).toBe(true);
-  expect(mockCreate).toHaveBeenCalledWith(
-    "content://folder",
-    "photo.png",
-    "image/png",
+  expect(mockPick).toHaveBeenCalledWith(
+    "android.intent.action.CREATE_DOCUMENT",
+    {
+      category: "android.intent.category.OPENABLE",
+      type: "image/png",
+      extra: { "android.intent.extra.TITLE": "photo.png" },
+    },
   );
-  expect(mockWrite).toHaveBeenCalledWith("content://folder/photo.png", "AP8=", {
-    encoding: "base64",
-  });
+  expect(mockWrite).toHaveBeenCalledWith(
+    "content://com.android.providers.downloads.documents/document/123",
+    new Uint8Array([0, 255]),
+  );
 });
-test("canceling directory selection writes nothing", async () => {
-  mockPermission.mockResolvedValueOnce({ granted: false, directoryUri: "" });
+test("canceling Save As writes nothing", async () => {
+  mockPick.mockResolvedValueOnce({ resultCode: 0 });
   expect(
     await saveAttachment("file:///photo.png", "photo.png", "image/png"),
   ).toBe(false);
-  expect(mockRead).not.toHaveBeenCalled();
-  expect(mockCreate).not.toHaveBeenCalled();
+  expect(mockWrite).not.toHaveBeenCalled();
+});
+test("does not report success without a returned document URI", async () => {
+  jest.spyOn(console, "error").mockImplementation(() => {});
+  mockPick.mockResolvedValueOnce({ resultCode: -1 });
+  await expect(
+    saveAttachment("file:///a.pdf", "a.pdf", "application/pdf"),
+  ).rejects.toThrow("SAVE_CREATE_FILE");
+  expect(mockWrite).not.toHaveBeenCalled();
+});
+test("reports write failures without claiming success", async () => {
+  mockWrite.mockImplementationOnce(() => {
+    throw new Error("provider write failed");
+  });
+  const log = jest.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await expect(
+      saveAttachment("file:///a.pdf", "a.pdf", "application/pdf"),
+    ).rejects.toThrow(/SAVE_WRITE_FILE.*provider write failed/s);
+  } finally {
+    log.mockRestore();
+  }
 });
 test("shares images with their MIME type", async () => {
   await shareAttachment("file:///photo.png", "image/png");
   expect(mockShare).toHaveBeenCalledWith("file:///photo.png", {
     mimeType: "image/png",
   });
-});
-
-test("reports file creation stage when Android rejects the selected location", async () => {
-  mockCreate.mockRejectedValueOnce(new Error("Location isn't writable"));
-  const logged = jest.spyOn(console, "error").mockImplementation(() => {});
-  try {
-    await expect(
-      saveAttachment("file:///photo.png", "photo.png", "image/png"),
-    ).rejects.toThrow("SAVE_CREATE_FILE");
-    expect(mockWrite).not.toHaveBeenCalled();
-    expect(logged).toHaveBeenCalled();
-  } finally {
-    logged.mockRestore();
-  }
-});
-
-test("reports write stage and preserves the original native error", async () => {
-  mockWrite.mockRejectedValueOnce(new Error("Location isn't writable"));
-  const logged = jest.spyOn(console, "error").mockImplementation(() => {});
-  try {
-    await expect(
-      saveAttachment("file:///photo.png", "photo.png", "image/png"),
-    ).rejects.toThrow(/SAVE_WRITE_FILE.*Location isn't writable/s);
-  } finally {
-    logged.mockRestore();
-  }
 });
