@@ -14,7 +14,7 @@ import {
   Screen,
 } from "../../components/common/UI";
 import { NoteCard } from "../../components/notes/NoteCard";
-import { validateDate } from "../../src/utils/values";
+import { EventDatePicker } from "../../components/forms/EventDatePicker";
 export default function Search() {
   const s = useServices();
   const [filter, setFilter] = useState<NoteFilter>({});
@@ -36,20 +36,11 @@ export default function Search() {
   const [dateKind, setDateKind] = useState<"day" | "createdDay" | "eventDay">(
     "day",
   );
-  let invalidDate = false;
-  try {
-    if (date) validateDate(date);
-  } catch {
-    invalidDate = true;
-  }
-  const final = {
-    ...f,
-    [dateKind]: invalidDate ? undefined : date || undefined,
-  };
+  const final = { ...f, [dateKind]: date || undefined };
   const results = useLoad(
-    () => (invalidDate ? Promise.resolve([]) : s.notes.list(final)),
+    () => s.notes.list(final),
     [] as Note[],
-    JSON.stringify({ ...final, invalidDate }),
+    JSON.stringify(final),
   );
   function patch(value: Partial<NoteFilter>) {
     setFilter((v) => ({ ...v, ...value }));
@@ -111,8 +102,15 @@ export default function Search() {
           />
         ))}
       </Row>
-      <Input placeholder="РРРР-ММ-ДД" value={date} onChangeText={setDate} />
-      {invalidDate && <Label>Вкажіть коректну дату РРРР-ММ-ДД</Label>}
+      <EventDatePicker
+        value={date || null}
+        label="Вибрати дату пошуку"
+        clearLabel="Очистити дату пошуку"
+        onChange={(value) => {
+          setDate(value ?? "");
+          setLimit(50);
+        }}
+      />
       <Label>Стан</Label>
       <Row>
         {(
