@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import { message } from "../../utils/values";
 
 export async function shareAttachment(uri: string, mimeType?: string) {
   if (!(await Sharing.isAvailableAsync()))
@@ -17,28 +18,45 @@ export async function saveAttachment(
     await shareAttachment(uri, mimeType);
     return false; // The system sheet handles saving or cancellation.
   }
-  const permission =
-    await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+  const permission = await saveStep("SAVE_PICK_DIRECTORY", "Вибір папки", () =>
+    FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(),
+  );
   if (!permission.granted) return false;
-  const bytes = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+  const bytes = await saveStep("SAVE_READ_SOURCE", "Читання вкладення", () =>
+    FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    }),
+  );
   const filename =
     name.replace(/[\\/\u0000-\u001f]/g, "_").trim() || "attachment";
-  const destination = await FileSystem.StorageAccessFramework.createFileAsync(
-    permission.directoryUri,
-    filename,
-    mimeType,
+  const destination = await saveStep(
+    "SAVE_CREATE_FILE",
+    "Створення файла",
+    () =>
+      FileSystem.StorageAccessFramework.createFileAsync(
+        permission.directoryUri,
+        filename,
+        mimeType,
+      ),
   );
-  try {
-    await FileSystem.writeAsStringAsync(destination, bytes, {
+  await saveStep("SAVE_WRITE_FILE", "Запис файла", () =>
+    FileSystem.writeAsStringAsync(destination, bytes, {
       encoding: FileSystem.EncodingType.Base64,
-    });
-  } catch (error) {
-    await FileSystem.deleteAsync(destination, { idempotent: true }).catch(
-      () => {},
-    );
-    throw error;
-  }
+    }),
+  );
   return true;
+}
+
+async function saveStep<T>(
+  code: string,
+  title: string,
+  action: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    // Keep the original native exception in Metro/logcat as well as the alert.
+    console.error(`Notto attachment save [${code}]`, error);
+    throw new Error(`${title} [${code}]: ${message(error)}`);
+  }
 }

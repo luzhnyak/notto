@@ -52,3 +52,29 @@ test("shares images with their MIME type", async () => {
     mimeType: "image/png",
   });
 });
+
+test("reports file creation stage when Android rejects the selected location", async () => {
+  mockCreate.mockRejectedValueOnce(new Error("Location isn't writable"));
+  const logged = jest.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await expect(
+      saveAttachment("file:///photo.png", "photo.png", "image/png"),
+    ).rejects.toThrow("SAVE_CREATE_FILE");
+    expect(mockWrite).not.toHaveBeenCalled();
+    expect(logged).toHaveBeenCalled();
+  } finally {
+    logged.mockRestore();
+  }
+});
+
+test("reports write stage and preserves the original native error", async () => {
+  mockWrite.mockRejectedValueOnce(new Error("Location isn't writable"));
+  const logged = jest.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await expect(
+      saveAttachment("file:///photo.png", "photo.png", "image/png"),
+    ).rejects.toThrow(/SAVE_WRITE_FILE.*Location isn't writable/s);
+  } finally {
+    logged.mockRestore();
+  }
+});
