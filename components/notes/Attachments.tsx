@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Alert, Image, Linking, Modal, View } from "react-native";
+import { useRef, useState } from "react";
+import { Alert, Image, Linking, Modal, Platform, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -22,6 +22,7 @@ import {
   LoadState,
   Row,
 } from "../common/UI";
+import { NoteActionsMenu, NoteMenuAction } from "./NoteActionsMenu";
 export function Attachments({
   noteId,
   editable,
@@ -41,6 +42,14 @@ export function Attachments({
   const [title, setTitle] = useState("");
   const [rename, setRename] = useState<number>();
   const [preview, setPreview] = useState("");
+  const [menuAttachment, setMenuAttachment] = useState<Attachment | null>(null);
+  const pendingAction = useRef<(() => void) | null>(null);
+  function closeAndRun(action: () => void) {
+    if (busy || pendingAction.current) return;
+    if (Platform.OS === "ios") pendingAction.current = action;
+    setMenuAttachment(null);
+    if (Platform.OS !== "ios") action();
+  }
   async function act(action: () => Promise<unknown>) {
     if (busy) return;
     setBusy(true);
@@ -118,6 +127,52 @@ export function Attachments({
         Alert.alert("Вкладення", "Файл збережено в обраній папці");
     } else await shareAttachment(uri, a.mimeType ?? undefined);
   }
+  const selected = menuAttachment;
+  const menuActions: NoteMenuAction[] = [];
+  if (selected) {
+    if (selected.type !== "url" && selected.path) {
+      menuActions.push(
+        {
+          id: "save",
+          label: "Зберегти",
+          onPress: () =>
+            closeAndRun(() => void act(() => exportFile(selected, true))),
+        },
+        {
+          id: "share",
+          label: "Надіслати",
+          onPress: () =>
+            closeAndRun(() => void act(() => exportFile(selected, false))),
+        },
+      );
+    }
+    if (editable) {
+      menuActions.push(
+        {
+          id: "rename",
+          label: "Назва",
+          onPress: () =>
+            closeAndRun(() => {
+              setRename(selected.id);
+              setTitle(selected.title ?? "");
+            }),
+        },
+        {
+          id: "remove",
+          label: "Прибрати",
+          danger: true,
+          onPress: () =>
+            closeAndRun(() =>
+              confirm(
+                "Видалити вкладення?",
+                selected.title ?? "",
+                () => void act(() => s.attachments.remove(selected)),
+              ),
+            ),
+        },
+      );
+    }
+  }
   return (
     <View style={{ gap: 12 }}>
       <Heading small>Вкладення</Heading>
@@ -129,50 +184,26 @@ export function Attachments({
       {state.data.map((a) => (
         <Card key={a.id}>
           {a.type === "image" && a.path && <Thumbnail path={a.path} />}
-          <Button
-            title={`${a.type === "image" ? "▧" : a.type === "url" ? "↗" : "▤"} ${a.title ?? "Вкладення"}`}
-            disabled={busy}
-            onPress={() => void act(() => open(a))}
-          />
-          {a.url && <Label muted>{a.url}</Label>}
-          {a.type !== "url" && a.path && (
-            <Row>
+          <View
+            style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}
+          >
+            <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
               <Button
-                title="Зберегти"
+                title={`${a.type === "image" ? "▧" : a.type === "url" ? "↗" : "▤"} ${a.title ?? "Вкладення"}`}
                 disabled={busy}
-                onPress={() => void act(() => exportFile(a, true))}
+                onPress={() => void act(() => open(a))}
               />
+              {a.url && <Label muted>{a.url}</Label>}
+            </View>
+            {(editable || (a.type !== "url" && !!a.path)) && (
               <Button
-                title="Надіслати"
+                title="⋮"
+                accessibilityLabel={`Дії вкладення: ${a.title ?? "Вкладення"}`}
                 disabled={busy}
-                onPress={() => void act(() => exportFile(a, false))}
+                onPress={() => setMenuAttachment(a)}
               />
-            </Row>
-          )}
-          {editable && (
-            <Row>
-              <Button
-                title="Назва"
-                disabled={busy}
-                onPress={() => {
-                  setRename(a.id);
-                  setTitle(a.title ?? "");
-                }}
-              />
-              <Button
-                title="Прибрати"
-                danger
-                disabled={busy}
-                onPress={() =>
-                  confirm(
-                    "Видалити вкладення?",
-                    a.title ?? "",
-                    () => void act(() => s.attachments.remove(a)),
-                  )
-                }
-              />
-            </Row>
-          )}
+            )}
+          </View>
         </Card>
       ))}
       {editable && (
@@ -239,6 +270,17 @@ export function Attachments({
           )}
         </>
       )}
+      <NoteActionsMenu
+        visible={menuAttachment !== null && !busy}
+        title={menuAttachment?.title ?? "Дії вкладення"}
+        actions={menuActions}
+        onClose={() => setMenuAttachment(null)}
+        onDismiss={() => {
+          const action = pendingAction.current;
+          pendingAction.current = null;
+          action?.();
+        }}
+      />
       <Modal
         visible={!!preview}
         onRequestClose={() => setPreview("")}
