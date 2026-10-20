@@ -1,3 +1,4 @@
+import { SelectField, TagPicker } from "../../components/forms/CatalogPicker";
 import { useState } from "react";
 import { Note, NoteFilter } from "../../src/domain/entities";
 import { useServices } from "../../src/services/context";
@@ -63,54 +64,36 @@ export default function Search() {
         onChangeText={(query) => patch({ query })}
       />
       <Label>Тип</Label>
-      <Row>
-        <Button
-          title="Усі"
-          selected={!filter.noteTypeId}
-          onPress={() => patch({ noteTypeId: undefined })}
-        />
-        {catalogs.data.types.map((v) => (
-          <Button
-            key={v.id}
-            title={v.name}
-            selected={filter.noteTypeId === v.id}
-            onPress={() => patch({ noteTypeId: v.id })}
-          />
-        ))}
-      </Row>
+      <SelectField
+        label="Тип нотатки"
+        placeholder="Усі типи"
+        clearLabel="Усі типи"
+        options={catalogs.data.types.map((v) => ({
+          id: v.id,
+          label: v.name,
+          color: v.color,
+        }))}
+        value={filter.noteTypeId ?? null}
+        onChange={(id) => patch({ noteTypeId: id ?? undefined })}
+      />
       <Label>Теги · збіг усіх обраних</Label>
-      <Row>
-        {catalogs.data.tags.map((v) => (
-          <Button
-            key={v.id}
-            title={`#${v.name}`}
-            selected={filter.tagIds?.includes(v.id)}
-            onPress={() =>
-              patch({
-                tagIds: filter.tagIds?.includes(v.id)
-                  ? filter.tagIds.filter((id) => id !== v.id)
-                  : [...(filter.tagIds ?? []), v.id],
-              })
-            }
-          />
-        ))}
-      </Row>
+      <TagPicker
+        options={catalogs.data.tags.map((v) => ({ id: v.id, label: v.name }))}
+        value={filter.tagIds ?? []}
+        onChange={(ids) => patch({ tagIds: ids })}
+      />
       <Label>Емоція</Label>
-      <Row>
-        <Button
-          title="Усі"
-          selected={!filter.emotionId}
-          onPress={() => patch({ emotionId: undefined })}
-        />
-        {catalogs.data.emotions.map((v) => (
-          <Button
-            key={v.id}
-            title={`${v.icon} ${v.name}`}
-            selected={filter.emotionId === v.id}
-            onPress={() => patch({ emotionId: v.id })}
-          />
-        ))}
-      </Row>
+      <SelectField
+        label="Емоція"
+        placeholder="Усі емоції"
+        clearLabel="Усі емоції"
+        options={catalogs.data.emotions.map((v) => ({
+          id: v.id,
+          label: `${v.icon} ${v.name}`,
+        }))}
+        value={filter.emotionId ?? null}
+        onChange={(id) => patch({ emotionId: id ?? undefined })}
+      />
       <Label>Дата</Label>
       <Row>
         {(

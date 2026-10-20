@@ -1,3 +1,4 @@
+import { SelectField, TagPicker } from "./CatalogPicker";
 import { EventDatePicker } from "./EventDatePicker";
 import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform } from "react-native";
@@ -9,15 +10,7 @@ import { useServices } from "../../src/services/context";
 import { useAppStore } from "../../src/store/useAppStore";
 import { useLoad } from "../../src/hooks/useLoad";
 import { validateDate, message } from "../../src/utils/values";
-import {
-  Button,
-  Heading,
-  Input,
-  Label,
-  LoadState,
-  Row,
-  Screen,
-} from "../common/UI";
+import { Button, Heading, Input, Label, LoadState, Screen } from "../common/UI";
 export function NoteForm({ note }: { note?: Note }) {
   const services = useServices();
   const changed = useAppStore((s) => s.changed);
@@ -165,18 +158,19 @@ export function NoteForm({ note }: { note?: Note }) {
           )}
         />
         <Label>Тип нотатки</Label>
-        <Row>
-          {catalog.data.types.map((type) => (
-            <Button
-              key={type.id}
-              title={type.name}
-              selected={values.noteTypeId === type.id}
-              onPress={() =>
-                setValue("noteTypeId", type.id, { shouldDirty: true })
-              }
-            />
-          ))}
-        </Row>
+        <SelectField
+          label="Тип нотатки"
+          placeholder="Оберіть тип"
+          options={catalog.data.types.map((v) => ({
+            id: v.id,
+            label: v.name,
+            color: v.color,
+          }))}
+          value={values.noteTypeId || null}
+          onChange={(id) => {
+            if (id !== null) setValue("noteTypeId", id, { shouldDirty: true });
+          }}
+        />
         <Label>Дата події · необов’язково</Label>
         <Controller
           control={control}
@@ -197,40 +191,23 @@ export function NoteForm({ note }: { note?: Note }) {
         />
         {errors.eventDate && <Label>{errors.eventDate.message}</Label>}
         <Label>Емоція</Label>
-        <Row>
-          <Button
-            title="Без емоції"
-            selected={values.emotionId === null}
-            onPress={() => setValue("emotionId", null, { shouldDirty: true })}
-          />
-          {catalog.data.emotions.map((e) => (
-            <Button
-              key={e.id}
-              title={`${e.icon} ${e.name}`}
-              selected={values.emotionId === e.id}
-              onPress={() => setValue("emotionId", e.id, { shouldDirty: true })}
-            />
-          ))}
-        </Row>
+        <SelectField
+          label="Емоція"
+          placeholder="Без емоції"
+          clearLabel="Без емоції"
+          options={catalog.data.emotions.map((v) => ({
+            id: v.id,
+            label: `${v.icon} ${v.name}`,
+          }))}
+          value={values.emotionId}
+          onChange={(id) => setValue("emotionId", id, { shouldDirty: true })}
+        />
         <Label>Теги</Label>
-        <Row>
-          {catalog.data.tags.map((tag) => (
-            <Button
-              key={tag.id}
-              title={`#${tag.name}`}
-              selected={values.tagIds.includes(tag.id)}
-              onPress={() =>
-                setValue(
-                  "tagIds",
-                  values.tagIds.includes(tag.id)
-                    ? values.tagIds.filter((id) => id !== tag.id)
-                    : [...values.tagIds, tag.id],
-                  { shouldDirty: true },
-                )
-              }
-            />
-          ))}
-        </Row>
+        <TagPicker
+          options={catalog.data.tags.map((v) => ({ id: v.id, label: v.name }))}
+          value={values.tagIds}
+          onChange={(ids) => setValue("tagIds", ids, { shouldDirty: true })}
+        />
         <Input
           placeholder="Новий тег"
           value={tagName}
