@@ -93,7 +93,7 @@ npx expo export --platform android --output-dir /tmp/notto-android
 npm run format:check
 ```
 
-Під час реалізації фактично пройдено TypeScript, 31 Jest tests, Expo Doctor 18/18 і Android Metro/Hermes export. SQL-тести виконуються на справжньому in-memory SQLite Node, не на SQL-моках. Покривають CRUD, транзакційний rollback, FK/CHECK, перенесення типів, теги, фільтри, FTS/fallback, архів/кошик, календарні дати; окремі тести — файли, серіалізація backup, hashes/path traversal, HTML escaping.
+Під час реалізації фактично пройдено TypeScript, 34 Jest tests, Expo Doctor 18/18 і Android Metro/Hermes export. SQL-тести виконуються на справжньому in-memory SQLite Node, не на SQL-моках. Покривають CRUD, транзакційний rollback, FK/CHECK, перенесення типів, теги, фільтри, FTS/fallback, архів/кошик, календарні дати; окремі тести — файли, серіалізація backup, hashes/path traversal, HTML escaping.
 
 **Не перевірено на Android/iOS пристрої:** native Google OAuth/Drive, picker/permissions, filesystem, PDF renderer, системне поширення, SQLite online restore, клавіатура й native navigation. У середовищі немає Android SDK/емулятора або Xcode й немає OAuth-креденшалів власника. Успішний JS export не є APK build або тестом на пристрої.
 
@@ -108,3 +108,7 @@ npm run format:check
 5. Вкладення: власне сховище, відносні шляхи, URL validation, перегляд.
 6. Backup/експорт: ZIP+маніфест, staging restore, Drive й 4 формати.
 7. Якість: unit/integration tests, TypeScript, Doctor, JS export, документація. Native acceptance, accessibility/device/performance profiling і автоматичний backup залишаються наступними кроками.
+
+### Виправлення closeAsync при збереженні
+
+SQLite-з’єднання живе протягом роботи застосунку; транзакції та зовнішні запити проходять через одну чергу. З’єднання більше не відкривається й не закривається після кожного запису, що обходить проблему Expo SDK 54 / FTS під час closeAsync. Прямі звернення налаштувань також проходять через чергу. Транзакційний callback має використовувати переданий `tx`, а не повторно викликати queued repository methods (це спричинило б deadlock). Native-перевірку виправлення потрібно виконати на пристрої.

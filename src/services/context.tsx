@@ -43,7 +43,7 @@ export function createServices(db: SQLiteDatabase, fts: boolean) {
       async get(key: string) {
         return (
           (
-            await db.getFirstAsync<{ value: string }>(
+            await connection.getFirstAsync<{ value: string }>(
               "SELECT value FROM settings WHERE key=?",
               key,
             )
@@ -51,7 +51,7 @@ export function createServices(db: SQLiteDatabase, fts: boolean) {
         );
       },
       async set(key: string, value: string) {
-        await db.runAsync(
+        await connection.runAsync(
           "INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
           key,
           value,
