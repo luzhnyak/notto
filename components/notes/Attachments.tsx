@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Alert, Image, Linking, Modal, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import * as Sharing from "expo-sharing";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import {
+  saveAttachment,
+  shareAttachment,
+} from "../../src/infrastructure/filesystem/AttachmentExport";
 import { Attachment } from "../../src/domain/entities";
 import { useServices } from "../../src/services/context";
 import { useLoad } from "../../src/hooks/useLoad";
@@ -89,10 +93,30 @@ export function Attachments({
     const uri = await s.attachments.uri(a.path);
     if (a.type === "image") setPreview(uri);
     else {
-      if (!(await Sharing.isAvailableAsync()))
-        throw new Error("Відкриття файлів недоступне");
-      await Sharing.shareAsync(uri, { mimeType: a.mimeType ?? undefined });
+      await shareAttachment(uri, a.mimeType ?? undefined);
     }
+  }
+  async function exportFile(a: Attachment, save: boolean) {
+    if (!a.path) throw new Error("Вкладення недоступне");
+    const uri = await s.attachments.uri(a.path);
+    if (save) {
+      const extension = a.path.split("/").pop() ?? "attachment";
+      let name = a.title ?? extension;
+      // Renaming a title must not remove the stored file's extension.
+      const suffix = extension.includes(".")
+        ? extension.slice(extension.lastIndexOf("."))
+        : "";
+      if (suffix && !name.toLowerCase().endsWith(suffix.toLowerCase()))
+        name += suffix;
+      if (
+        await saveAttachment(
+          uri,
+          name,
+          a.mimeType ?? "application/octet-stream",
+        )
+      )
+        Alert.alert("Вкладення", "Файл збережено в обраній папці");
+    } else await shareAttachment(uri, a.mimeType ?? undefined);
   }
   return (
     <View style={{ gap: 12 }}>
@@ -111,6 +135,20 @@ export function Attachments({
             onPress={() => void act(() => open(a))}
           />
           {a.url && <Label muted>{a.url}</Label>}
+          {a.type !== "url" && a.path && (
+            <Row>
+              <Button
+                title="Зберегти"
+                disabled={busy}
+                onPress={() => void act(() => exportFile(a, true))}
+              />
+              <Button
+                title="Надіслати"
+                disabled={busy}
+                onPress={() => void act(() => exportFile(a, false))}
+              />
+            </Row>
+          )}
           {editable && (
             <Row>
               <Button
@@ -206,21 +244,18 @@ export function Attachments({
         onRequestClose={() => setPreview("")}
         animationType="fade"
       >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "#101010",
-            paddingTop: 50,
-            paddingBottom: 30,
-          }}
-        >
-          <Image
-            source={{ uri: preview }}
-            style={{ flex: 1 }}
-            resizeMode="contain"
-          />
-          <Button title="Закрити" onPress={() => setPreview("")} />
-        </View>
+        <SafeAreaProvider>
+          <SafeAreaView style={{ flex: 1, backgroundColor: "#101010" }}>
+            <View style={{ flex: 1, padding: 12 }}>
+              <Image
+                source={{ uri: preview }}
+                style={{ flex: 1 }}
+                resizeMode="contain"
+              />
+              <Button title="Закрити" onPress={() => setPreview("")} />
+            </View>
+          </SafeAreaView>
+        </SafeAreaProvider>
       </Modal>
     </View>
   );
