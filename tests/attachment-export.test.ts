@@ -89,7 +89,7 @@ test.each([
   { resultCode: -1 },
   {
     resultCode: -1,
-    data: "Intent { dat=content://provider/document/123 flg=0x43 }",
+    data: "Intent { dat=https://example.com/file flg=0x43 }",
   },
   { resultCode: 1, data: "content://provider/document/123" },
 ])(
@@ -109,3 +109,34 @@ test.each([
     expect(mockWrite).not.toHaveBeenCalled();
   },
 );
+
+test.each([
+  "content://com.android.providers.downloads.documents/document/26",
+  "content://com.android.providers.downloads.documents/document/28",
+  "content://com.android.providers.downloads.documents/document/raw:/storage/emulated/0/Download/notto/Байт.jpg",
+  "content://com.android.providers.downloads.documents/document/raw:/storage/emulated/0/Download/notto/Байт з пробілом.jpg",
+  "content://provider/document/name%20with%20spaces%2520.jpg",
+])(
+  "writes bytes to the document URI from the observed legacy Intent result: %s",
+  async (uri) => {
+    mockPick.mockResolvedValueOnce({
+      resultCode: -1,
+      data: `Intent { dat=${uri} flg=0x43 }`,
+    });
+    expect(
+      await saveAttachment("file:///photo.png", "photo.png", "image/png"),
+    ).toBe(true);
+    expect(mockWrite).toHaveBeenCalledWith(uri, new Uint8Array([0, 255]));
+  },
+);
+
+test("canceling a legacy Intent result never writes a file", async () => {
+  mockPick.mockResolvedValueOnce({
+    resultCode: 0,
+    data: "Intent { dat=content://provider/document/123 flg=0x43 }",
+  });
+  expect(
+    await saveAttachment("file:///photo.png", "photo.png", "image/png"),
+  ).toBe(false);
+  expect(mockWrite).not.toHaveBeenCalled();
+});

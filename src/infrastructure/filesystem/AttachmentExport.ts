@@ -38,10 +38,10 @@ export async function saveAttachment(
         },
       );
       if (result.resultCode === IntentLauncher.ResultCode.Canceled) return null;
+      const documentUri = createdDocumentUri(result.data);
       if (
         result.resultCode !== IntentLauncher.ResultCode.Success ||
-        typeof result.data !== "string" ||
-        !result.data.startsWith("content://")
+        !documentUri
       ) {
         const details = JSON.stringify({
           resultCode: result.resultCode,
@@ -52,7 +52,7 @@ export async function saveAttachment(
           `Android не повернув адресу файла для збереження. Результат діалогу: ${details}`,
         );
       }
-      return result.data;
+      return documentUri;
     },
   );
   if (!destination) return false;
@@ -76,4 +76,15 @@ async function saveStep<T>(
     console.error(`Notto attachment save [${code}]`, error);
     throw new Error(`${title} [${code}]: ${message(error)}`);
   }
+}
+
+// Compatibility with installed Expo binaries returning Intent.toString(). Only
+// accept the exact CREATE_DOCUMENT result shape observed in device logs. Keep
+// the URI verbatim: decoding it or splitting on spaces changes document IDs.
+function createdDocumentUri(data: unknown): string | undefined {
+  if (typeof data !== "string") return undefined;
+  if (data.startsWith("content://")) return data;
+  return /^Intent \{ dat=(content:\/\/[^\r\n]+) flg=0x[0-9a-fA-F]+ \}$/.exec(
+    data,
+  )?.[1];
 }
