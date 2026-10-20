@@ -140,3 +140,12 @@ SQLite-з’єднання живе протягом роботи застосу
 Після оновлення виконайте `npm ci` і **`npm run android`**. Додано `expo-intent-launcher` 13.0.8 та ідемпотентний postinstall-патч `scripts/patch-expo-intent-launcher.cjs`: native-модуль має повертати `Intent.data`, а не `Intent.toString()`. Патч перевіряє версію та очікуваний код. Перегляньте його під час оновлення Expo. Самого перезапуску Metro недостатньо.
 
 На пристрої перевірте збереження PNG/JPEG і PDF у Downloads та вкладену папку, зміну назви, повторне збереження з тією самою назвою, скасування і надсилання. Автоматичні перевірки не замінюють перевірку системного діалогу й запису на Android.
+
+
+### Застосування Android-патчів Expo
+
+Expo SDK 54 може використовувати готові AAR-модулі з `local-maven-repo` (позначка `[📦]` у журналі Gradle). У такому режимі зміни Kotlin у `node_modules` не включаються навіть після очищення Android-збірки. Для `expo-file-system` і `expo-intent-launcher` увімкнено `expo.autolinking.android.buildFromSource` у `package.json`. Інші модулі зберігають стандартний спосіб збірки.
+
+Патч `FileSystemFile.write` для `content://` відкриває потік `ContentResolver` до вже створеного документа без повторного `File.create()`. Неповні метадані провайдера більше не повинні переводити запис у гілку створення файла. Системні дозволи перевіряє Android під час відкриття потоку. Для звичайних локальних файлів поведінка створення збережена.
+
+Оновлення: `git pull origin feat/local-mvp`, `npm ci`, `npm run android`. Перевірте, що під час Gradle-конфігурації обидва змінені модулі показуються без позначки `[📦]`, а під час компіляції є задачі `:expo-file-system:compileDebugKotlin` і `:expo-intent-launcher:compileDebugKotlin`. `gradlew clean` не потрібен. Реальний запис через провайдер Downloads має бути перевірений на Android; JS-тести й перевірка конфігурації не виконують його.

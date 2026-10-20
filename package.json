@@ -56,5 +56,15 @@
   },
   "engines": {
     "node": ">=24 <25"
+  },
+  "expo": {
+    "autolinking": {
+      "android": {
+        "buildFromSource": [
+          "expo-file-system",
+          "expo-intent-launcher"
+        ]
+      }
+    }
   }
 }

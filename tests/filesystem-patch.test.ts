@@ -30,3 +30,18 @@ test("installed Android SAF accepts granted tree URIs without a provider allowli
   // Permission checks remain in place before creating and writing documents.
   expect(source).toContain("ensurePermission(uri, Permission.WRITE)");
 });
+
+test("modern content-URI writes skip file creation even when provider metadata says missing", () => {
+  const {
+    patchModernSource,
+  } = require("../scripts/patch-expo-file-system.cjs");
+  const original = Array(3)
+    .fill("if (!exists) {\n      create()\n    }")
+    .join("\n");
+  const expected = Array(3)
+    .fill("if (!uri.isContentUri && !exists) {\n      create()\n    }")
+    .join("\n");
+  expect(patchModernSource(original)).toBe(expected);
+  expect(patchModernSource(expected)).toBe(expected);
+  expect(() => patchModernSource("unexpected upstream code")).toThrow();
+});
