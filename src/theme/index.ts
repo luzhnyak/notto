@@ -4,6 +4,8 @@ export const palettes = {
   light: {
     background: "#F6F5F1",
     surface: "#FFFFFF",
+    button: "#E7E8F5",
+    buttonBorder: "#C9CCE8",
     text: "#202631",
     muted: "#697382",
     border: "#E3E4E7",
@@ -14,6 +16,8 @@ export const palettes = {
   dark: {
     background: "#15171C",
     surface: "#20242C",
+    button: "#34364F",
+    buttonBorder: "#55597A",
     text: "#F3F4F8",
     muted: "#A3ADBD",
     border: "#343A46",

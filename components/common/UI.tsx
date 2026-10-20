@@ -89,25 +89,28 @@ export function Button({
   selected = false,
   danger = false,
   disabled = false,
+  accessibilityLabel,
 }: {
   title: string;
   onPress: () => void;
   selected?: boolean;
   danger?: boolean;
   disabled?: boolean;
+  accessibilityLabel?: string;
 }) {
   const t = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
       accessibilityState={{ selected, disabled }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
         {
-          backgroundColor: selected ? t.primary : t.surface,
-          borderColor: danger ? t.danger : t.border,
+          backgroundColor: selected ? t.primary : t.button,
+          borderColor: danger ? t.danger : t.buttonBorder,
           opacity: disabled ? 0.45 : pressed ? 0.65 : 1,
         },
       ]}

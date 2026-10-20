@@ -1,3 +1,4 @@
+import { EventDatePicker } from "./EventDatePicker";
 import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { Controller, useForm } from "react-hook-form";
@@ -123,9 +124,7 @@ export function NoteForm({ note }: { note?: Note }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <Screen>
-        <Heading>
-          {note ? "Збережіть важливе" : "Нова сторінка вашої історії"}
-        </Heading>
+        <Heading>{note ? "Збережіть важливе" : "Нова нотатка"}</Heading>
         <LoadState
           loading={catalog.loading}
           error={catalog.error}
@@ -193,13 +192,7 @@ export function NoteForm({ note }: { note?: Note }) {
             },
           }}
           render={({ field: { value, onChange } }) => (
-            <Input
-              placeholder="РРРР-ММ-ДД"
-              accessibilityLabel="Дата події"
-              value={value ?? ""}
-              onChangeText={(v) => onChange(v || null)}
-              keyboardType="numbers-and-punctuation"
-            />
+            <EventDatePicker value={value} onChange={onChange} />
           )}
         />
         {errors.eventDate && <Label>{errors.eventDate.message}</Label>}

@@ -6,7 +6,11 @@ import {
   DarkTheme,
   DefaultTheme,
 } from "@react-navigation/native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  SafeAreaProvider,
+  SafeAreaView,
+  initialWindowMetrics,
+} from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as SQLite from "expo-sqlite";
 import { cleanupStorageGenerations } from "../src/infrastructure/filesystem/AttachmentFiles";
@@ -67,87 +71,100 @@ export default function Root() {
     };
   }, [retry]);
   return (
-    <SafeAreaProvider>
-      <StatusBar style={t.dark ? "light" : "dark"} />
-      <ThemeProvider
-        value={{
-          ...(t.dark ? DarkTheme : DefaultTheme),
-          colors: {
-            ...(t.dark ? DarkTheme : DefaultTheme).colors,
-            primary: t.primary,
-            background: t.background,
-            card: t.surface,
-            text: t.text,
-            border: t.border,
-          },
-        }}
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <SafeAreaView
+        edges={["bottom"]}
+        style={{ flex: 1, backgroundColor: t.surface }}
       >
-        {!services ? (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              padding: 30,
-              gap: 16,
-              backgroundColor: t.background,
-            }}
-          >
-            {error ? (
-              <>
-                <Text style={{ color: t.danger }}>{error}</Text>
-                <Button
-                  title="Повторити"
-                  onPress={() => setRetry((v) => v + 1)}
-                />
-              </>
-            ) : (
-              <ActivityIndicator color={t.primary} />
-            )}
-          </View>
-        ) : (
-          <ServicesContext.Provider value={services}>
-            <Stack
-              screenOptions={{
-                headerBackTitle: "Назад",
-                contentStyle: { backgroundColor: t.background },
-              }}
-            >
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="notes/add"
-                options={{ title: "Нова нотатка", presentation: "modal" }}
-              />
-              <Stack.Screen name="notes/[id]" options={{ title: "Нотатка" }} />
-              <Stack.Screen
-                name="notes/[id]/edit"
-                options={{ title: "Редагування", presentation: "modal" }}
-              />
-              <Stack.Screen name="catalog" options={{ title: "Довідники" }} />
-              <Stack.Screen name="collection" options={{ title: "Колекція" }} />
-            </Stack>
-          </ServicesContext.Provider>
-        )}
-      </ThemeProvider>
-      {busy && (
-        <View
-          accessibilityViewIsModal
-          style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            backgroundColor: t.background + "E8",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 16,
+        <StatusBar style={t.dark ? "light" : "dark"} />
+        <ThemeProvider
+          value={{
+            ...(t.dark ? DarkTheme : DefaultTheme),
+            colors: {
+              ...(t.dark ? DarkTheme : DefaultTheme).colors,
+              primary: t.primary,
+              background: t.background,
+              card: t.surface,
+              text: t.text,
+              border: t.border,
+            },
           }}
         >
-          <ActivityIndicator size="large" color={t.primary} />
-          <Text style={{ color: t.text }}>Зачекайте завершення операції…</Text>
-        </View>
-      )}
+          {!services ? (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                padding: 30,
+                gap: 16,
+                backgroundColor: t.background,
+              }}
+            >
+              {error ? (
+                <>
+                  <Text style={{ color: t.danger }}>{error}</Text>
+                  <Button
+                    title="Повторити"
+                    onPress={() => setRetry((v) => v + 1)}
+                  />
+                </>
+              ) : (
+                <ActivityIndicator color={t.primary} />
+              )}
+            </View>
+          ) : (
+            <ServicesContext.Provider value={services}>
+              <Stack
+                screenOptions={{
+                  headerBackTitle: "Назад",
+                  contentStyle: { backgroundColor: t.background },
+                }}
+              >
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="notes/add"
+                  options={{ title: "Нова нотатка", presentation: "modal" }}
+                />
+                <Stack.Screen
+                  name="notes/[id]"
+                  options={{ title: "Нотатка" }}
+                />
+                <Stack.Screen
+                  name="notes/[id]/edit"
+                  options={{ title: "Редагування", presentation: "modal" }}
+                />
+                <Stack.Screen name="catalog" options={{ title: "Довідники" }} />
+                <Stack.Screen
+                  name="collection"
+                  options={{ title: "Колекція" }}
+                />
+              </Stack>
+            </ServicesContext.Provider>
+          )}
+        </ThemeProvider>
+        {busy && (
+          <View
+            accessibilityViewIsModal
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 100,
+              backgroundColor: t.background + "E8",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 16,
+            }}
+          >
+            <ActivityIndicator size="large" color={t.primary} />
+            <Text style={{ color: t.text }}>
+              Зачекайте завершення операції…
+            </Text>
+          </View>
+        )}
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }
