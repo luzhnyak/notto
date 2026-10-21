@@ -118,6 +118,9 @@ export function NoteAgenda({
         minDate="1000-01-01"
         maxDate="9999-12-31"
         showClosingKnob
+        // Agenda translates an overflow-hidden CalendarList. Android clipping
+        // can detach its months, leaving only the separate weekday header.
+        removeClippedSubviews={false}
         markingType="multi-dot"
         markedDates={markedDates}
         loadItemsForMonth={rememberMonth}

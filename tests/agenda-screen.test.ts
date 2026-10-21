@@ -99,6 +99,8 @@ test("Agenda owns scrolling and groups all notes by event date or local creation
   ).toEqual([1, 2]);
   expect(props.items["2024-02-28"][0].note.id).toBe(3);
   expect(props.items["2024-03-01"]).toEqual([]);
+  // Android must retain months while Agenda translates its clipped header.
+  expect(props.removeClippedSubviews).toBe(false);
   expect(props.firstDay).toBe(1);
   expect(props.markingType).toBe("multi-dot");
   expect(props.markedDates["2024-02-29"].dots).toHaveLength(1);
