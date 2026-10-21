@@ -107,61 +107,68 @@ export function NoteAgenda({
         year={Number(selected.slice(0, 4))}
         onChange={selectYear}
       />
-      <Agenda
-        key={`${anchor}-${t.dark ? "dark" : "light"}`}
-        style={{ flex: 1, marginHorizontal: -12 }}
-        selected={selected}
-        items={items}
-        firstDay={1}
-        pastScrollRange={24}
-        futureScrollRange={24}
-        minDate="1000-01-01"
-        maxDate="9999-12-31"
-        showClosingKnob
-        // Agenda translates an overflow-hidden CalendarList. Android clipping
-        // can detach its months, leaving only the separate weekday header.
-        removeClippedSubviews={false}
-        markingType="multi-dot"
-        markedDates={markedDates}
-        loadItemsForMonth={rememberMonth}
-        onDayPress={selectDay}
-        onDayChange={selectDay}
-        rowHasChanged={(previous, next) => previous !== next}
-        renderItem={(entry) => (
-          <View style={{ marginTop: 10, marginRight: 8, marginBottom: 4 }}>
-            <NoteCard note={(entry as NoteEntry).note} />
-          </View>
-        )}
-        renderEmptyDate={() => (
-          <View
-            style={{ minHeight: 56, justifyContent: "center", marginRight: 8 }}
-          >
-            <Label muted>Немає нотаток</Label>
-          </View>
-        )}
-        renderEmptyData={() => (
-          <EmptyState
-            title="Вільна сторінка"
-            description="Цього дня ще немає нотаток."
-          />
-        )}
-        theme={{
-          backgroundColor: t.background,
-          calendarBackground: t.background,
-          textSectionTitleColor: t.muted,
-          dayTextColor: t.text,
-          monthTextColor: t.text,
-          todayTextColor: t.primary,
-          selectedDayBackgroundColor: t.soft,
-          selectedDayTextColor: t.primary,
-          textDisabledColor: t.muted,
-          arrowColor: t.primary,
-          agendaDayTextColor: t.muted,
-          agendaDayNumColor: t.text,
-          agendaTodayColor: t.primary,
-          agendaKnobColor: t.primary,
-        }}
-      />
+      {/* Agenda forwards style into CalendarList. Keep flex on a wrapper so
+          its inner list does not collapse inside an unbounded native View. */}
+      <View style={{ flex: 1, marginHorizontal: -12 }}>
+        <Agenda
+          key={`${anchor}-${t.dark ? "dark" : "light"}`}
+          selected={selected}
+          items={items}
+          firstDay={1}
+          pastScrollRange={24}
+          futureScrollRange={24}
+          minDate="1000-01-01"
+          maxDate="9999-12-31"
+          showClosingKnob
+          // Agenda translates an overflow-hidden CalendarList. Android clipping
+          // can detach its months, leaving only the separate weekday header.
+          removeClippedSubviews={false}
+          markingType="multi-dot"
+          markedDates={markedDates}
+          loadItemsForMonth={rememberMonth}
+          onDayPress={selectDay}
+          onDayChange={selectDay}
+          rowHasChanged={(previous, next) => previous !== next}
+          renderItem={(entry) => (
+            <View style={{ marginTop: 10, marginRight: 8, marginBottom: 4 }}>
+              <NoteCard note={(entry as NoteEntry).note} />
+            </View>
+          )}
+          renderEmptyDate={() => (
+            <View
+              style={{
+                minHeight: 56,
+                justifyContent: "center",
+                marginRight: 8,
+              }}
+            >
+              <Label muted>Немає нотаток</Label>
+            </View>
+          )}
+          renderEmptyData={() => (
+            <EmptyState
+              title="Вільна сторінка"
+              description="Цього дня ще немає нотаток."
+            />
+          )}
+          theme={{
+            backgroundColor: t.background,
+            calendarBackground: t.background,
+            textSectionTitleColor: t.muted,
+            dayTextColor: t.text,
+            monthTextColor: t.text,
+            todayTextColor: t.primary,
+            selectedDayBackgroundColor: t.soft,
+            selectedDayTextColor: t.primary,
+            textDisabledColor: t.muted,
+            arrowColor: t.primary,
+            agendaDayTextColor: t.muted,
+            agendaDayNumColor: t.text,
+            agendaTodayColor: t.primary,
+            agendaKnobColor: t.primary,
+          }}
+        />
+      </View>
     </View>
   );
 }
