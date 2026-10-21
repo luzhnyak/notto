@@ -12,7 +12,7 @@
     "doctor": "expo-doctor",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "postinstall": "node scripts/patch-react-native-screens.cjs && node scripts/patch-expo-file-system.cjs && node scripts/patch-expo-intent-launcher.cjs"
+    "postinstall": "node scripts/patch-react-native-screens.cjs && node scripts/patch-expo-file-system.cjs && node scripts/patch-expo-intent-launcher.cjs && node scripts/patch-react-native-calendars.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -39,7 +39,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.72.0",
     "react-native": "0.81.5",
-    "react-native-calendars": "^1.1314.0",
+    "react-native-calendars": "1.1314.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "4.16.0",
     "zustand": "^5.0.12"
