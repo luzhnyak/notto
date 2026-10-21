@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
+import { useTheme } from "../../src/theme";
 import { router } from "expo-router";
 import { useServices } from "../../src/services/context";
 import { useLoad } from "../../src/hooks/useLoad";
@@ -8,7 +10,6 @@ import { Tag } from "../../src/domain/entities";
 import { message } from "../../src/utils/values";
 import {
   Button,
-  Card,
   confirm,
   Heading,
   Input,
@@ -17,6 +18,7 @@ import {
   Screen,
 } from "../../components/common/UI";
 export default function Tags() {
+  const t = useTheme();
   const s = useServices();
   const changed = useAppStore((v) => v.changed);
   const state = useLoad(() => s.tags.list(), [] as Tag[]);
@@ -64,35 +66,68 @@ export default function Tags() {
         retry={state.reload}
       />
       {state.data.map((tag) => (
-        <Card key={tag.id}>
-          <Button
-            title={`#${tag.name}`}
+        <View
+          key={tag.id}
+          style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Нотатки з тегом ${tag.name}`}
             onPress={() =>
               router.push({ pathname: "/collection", params: { tag: tag.id } })
             }
-          />
-          <Row>
-            <Button
-              title="Перейменувати"
-              onPress={() => {
-                setId(tag.id);
-                setName(tag.name);
-              }}
-            />
-            <Button
-              title="Видалити"
-              danger
-              disabled={busy}
-              onPress={() =>
-                confirm(
-                  "Видалити тег?",
-                  "Нотатки залишаться, зв’язки з тегом буде прибрано.",
-                  () => void act(() => s.tags.remove(tag.id)),
-                )
-              }
-            />
-          </Row>
-        </Card>
+            style={({ pressed }) => ({
+              flex: 1,
+              minWidth: 0,
+              minHeight: 44,
+              justifyContent: "center",
+              opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            <Text style={{ color: t.primary, fontSize: 16 }}>#{tag.name}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Перейменувати тег ${tag.name}`}
+            accessibilityState={{ disabled: busy }}
+            disabled={busy}
+            onPress={() => {
+              setId(tag.id);
+              setName(tag.name);
+            }}
+            style={({ pressed }) => ({
+              width: 44,
+              height: 44,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: busy ? 0.45 : pressed ? 0.6 : 1,
+            })}
+          >
+            <FontAwesome name="pencil" size={20} color={t.primary} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Видалити тег ${tag.name}`}
+            accessibilityState={{ disabled: busy }}
+            disabled={busy}
+            onPress={() =>
+              confirm(
+                "Видалити тег?",
+                "Нотатки залишаться, зв’язки з тегом буде прибрано.",
+                () => void act(() => s.tags.remove(tag.id)),
+              )
+            }
+            style={({ pressed }) => ({
+              width: 44,
+              height: 44,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: busy ? 0.45 : pressed ? 0.6 : 1,
+            })}
+          >
+            <FontAwesome name="trash-o" size={20} color={t.danger} />
+          </Pressable>
+        </View>
       ))}
     </Screen>
   );

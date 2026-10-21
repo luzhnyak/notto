@@ -4,7 +4,7 @@ import { useLoad } from "../../src/hooks/useLoad";
 import { Note } from "../../src/domain/entities";
 import { localDate } from "../../src/utils/values";
 import { NoteAgenda } from "../../components/calendar/NoteAgenda";
-import { Heading, LoadState, Screen } from "../../components/common/UI";
+import { LoadState, Screen } from "../../components/common/UI";
 export default function Calendar() {
   const [selected, setSelected] = useState(localDate());
   const s = useServices();
@@ -25,7 +25,6 @@ export default function Calendar() {
   }, [] as Note[]);
   return (
     <Screen scroll={false}>
-      <Heading small>Дні, які варто пам’ятати</Heading>
       <LoadState
         loading={state.loading}
         error={state.error}
