@@ -8,9 +8,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.luzhnyak.notto",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.luzhnyak.notto",
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
