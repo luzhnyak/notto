@@ -33,6 +33,8 @@ jest.mock("../components/notes/NoteCard", () => ({
     React.createElement("NoteCard", props as object),
 }));
 import Calendar from "../app/(tabs)/calendar";
+import { useAppStore } from "../src/store/useAppStore";
+import { palettes } from "../src/theme";
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 function note(
   id: number,
@@ -195,4 +197,23 @@ test("day scrolling retains render callbacks, theme and note row identity", asyn
       note: { ...entry.note, title: "Оновлено" },
     }),
   ).toBe(true);
+});
+
+test("switching themes updates the reservations background as well as calendar and day colors", async () => {
+  const view = await mount();
+  try {
+    for (const mode of ["dark", "light"] as const) {
+      await act(async () => useAppStore.getState().setTheme(mode));
+      const theme = agenda(view).props.theme;
+      expect(theme.calendarBackground).toBe(palettes[mode].background);
+      expect(theme.reservationsBackgroundColor).toBe(palettes[mode].background);
+      expect(theme.agendaDayNumColor).toBe(palettes[mode].text);
+      expect(theme.agendaDayTextColor).toBe(palettes[mode].muted);
+    }
+  } finally {
+    await act(async () => {
+      view.unmount();
+      useAppStore.getState().setTheme("system");
+    });
+  }
 });

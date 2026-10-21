@@ -135,6 +135,7 @@ export function NoteAgenda({
   const theme = useMemo(
     () => ({
       backgroundColor: t.background,
+      reservationsBackgroundColor: t.background,
       calendarBackground: t.background,
       textSectionTitleColor: t.muted,
       dayTextColor: t.text,
