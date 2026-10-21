@@ -11,7 +11,12 @@
       "supportsTablet": true
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#F6F5F1"
+      }
     },
     "plugins": [
       "expo-router",
@@ -30,10 +35,27 @@
         }
       ],
       "expo-font",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F6F5F1",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#15171C"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "icon": "./assets/images/icon.png",
+    "web": {
+      "favicon": "./assets/images/favicon.png"
     }
   }
 }
