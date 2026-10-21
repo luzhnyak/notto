@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { View } from "react-native";
 import {
   Agenda,
@@ -15,6 +15,34 @@ import { CalendarYearPicker } from "./CalendarYearPicker";
 import "./locale";
 
 type NoteEntry = AgendaEntry & { note: Note };
+
+// Keep row renderers stable when Agenda reports a new visible day.
+const AgendaNoteCard = memo(NoteCard);
+function renderItem(entry: AgendaEntry) {
+  return (
+    <View style={{ marginTop: 10, marginRight: 8, marginBottom: 4 }}>
+      <AgendaNoteCard note={(entry as NoteEntry).note} />
+    </View>
+  );
+}
+function rowHasChanged(previous: AgendaEntry, next: AgendaEntry) {
+  return (previous as NoteEntry).note !== (next as NoteEntry).note;
+}
+function renderEmptyDate() {
+  return (
+    <View style={{ minHeight: 56, justifyContent: "center", marginRight: 8 }}>
+      <Label muted>Немає нотаток</Label>
+    </View>
+  );
+}
+function renderEmptyData() {
+  return (
+    <EmptyState
+      title="Вільна сторінка"
+      description="Цього дня ще немає нотаток."
+    />
+  );
+}
 
 // Agenda treats an absent date as not loaded. Materialize known empty days in
 // each visited month and its neighbours, including the 31-day forward list.
@@ -84,10 +112,13 @@ export function NoteAgenda({
     },
     [],
   );
-  function selectDay(day: { dateString: string }) {
-    rememberMonth(day);
-    onSelect(day.dateString);
-  }
+  const selectDay = useCallback(
+    (day: { dateString: string }) => {
+      rememberMonth(day);
+      onSelect(day.dateString);
+    },
+    [rememberMonth, onSelect],
+  );
   function selectYear(year: number) {
     const current = new Date(`${selected}T12:00:00`);
     const day = Math.min(
@@ -101,6 +132,25 @@ export function NoteAgenda({
     setMonths([target.slice(0, 7)]);
     onSelect(target);
   }
+  const theme = useMemo(
+    () => ({
+      backgroundColor: t.background,
+      calendarBackground: t.background,
+      textSectionTitleColor: t.muted,
+      dayTextColor: t.text,
+      monthTextColor: t.text,
+      todayTextColor: t.primary,
+      selectedDayBackgroundColor: t.soft,
+      selectedDayTextColor: t.primary,
+      textDisabledColor: t.muted,
+      arrowColor: t.primary,
+      agendaDayTextColor: t.muted,
+      agendaDayNumColor: t.text,
+      agendaTodayColor: t.primary,
+      agendaKnobColor: t.primary,
+    }),
+    [t.background, t.muted, t.text, t.primary, t.soft],
+  );
   return (
     <View style={{ flex: 1, gap: 12 }}>
       <CalendarYearPicker
@@ -128,45 +178,11 @@ export function NoteAgenda({
           loadItemsForMonth={rememberMonth}
           onDayPress={selectDay}
           onDayChange={selectDay}
-          rowHasChanged={(previous, next) => previous !== next}
-          renderItem={(entry) => (
-            <View style={{ marginTop: 10, marginRight: 8, marginBottom: 4 }}>
-              <NoteCard note={(entry as NoteEntry).note} />
-            </View>
-          )}
-          renderEmptyDate={() => (
-            <View
-              style={{
-                minHeight: 56,
-                justifyContent: "center",
-                marginRight: 8,
-              }}
-            >
-              <Label muted>Немає нотаток</Label>
-            </View>
-          )}
-          renderEmptyData={() => (
-            <EmptyState
-              title="Вільна сторінка"
-              description="Цього дня ще немає нотаток."
-            />
-          )}
-          theme={{
-            backgroundColor: t.background,
-            calendarBackground: t.background,
-            textSectionTitleColor: t.muted,
-            dayTextColor: t.text,
-            monthTextColor: t.text,
-            todayTextColor: t.primary,
-            selectedDayBackgroundColor: t.soft,
-            selectedDayTextColor: t.primary,
-            textDisabledColor: t.muted,
-            arrowColor: t.primary,
-            agendaDayTextColor: t.muted,
-            agendaDayNumColor: t.text,
-            agendaTodayColor: t.primary,
-            agendaKnobColor: t.primary,
-          }}
+          rowHasChanged={rowHasChanged}
+          renderItem={renderItem}
+          renderEmptyDate={renderEmptyDate}
+          renderEmptyData={renderEmptyData}
+          theme={theme}
         />
       </View>
     </View>

@@ -162,3 +162,37 @@ test("loading and errors use the existing status UI instead of an empty Agenda s
   await act(async () => button(view, "Спробувати ще").props.onPress());
   expect(mockReload).toHaveBeenCalled();
 });
+
+test("day scrolling retains render callbacks, theme and note row identity", async () => {
+  const view = await mount();
+  await select(view, "2024-02-28");
+  const before = agenda(view).props;
+  await select(view, "2024-02-29");
+  const after = agenda(view).props;
+  for (const key of [
+    "theme",
+    "renderItem",
+    "renderEmptyDate",
+    "renderEmptyData",
+    "rowHasChanged",
+    "onDayPress",
+    "onDayChange",
+  ]) {
+    expect(after[key]).toBe(before[key]);
+  }
+  expect(after.items).toBe(before.items);
+  const entry = after.items["2024-02-29"][0];
+  await act(async () =>
+    agenda(view).props.loadItemsForMonth({ dateString: "2024-05-01" }),
+  );
+  const rebuilt = agenda(view).props;
+  expect(rebuilt.rowHasChanged(entry, rebuilt.items["2024-02-29"][0])).toBe(
+    false,
+  );
+  expect(
+    rebuilt.rowHasChanged(entry, {
+      ...entry,
+      note: { ...entry.note, title: "Оновлено" },
+    }),
+  ).toBe(true);
+});
