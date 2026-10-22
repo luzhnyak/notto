@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Notto",
+    "slug": "notto",
+    "version": "0.1.0",
+    "scheme": "notto",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.luzhnyak.notto",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.luzhnyak.notto",
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#F6F5F1"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-sqlite",
+        {
+          "enableFTS": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Дозвольте Notto додавати вибрані фотографії до нотаток.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F6F5F1",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#15171C"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "icon": "./assets/images/icon.png",
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    }
+  }
+}
